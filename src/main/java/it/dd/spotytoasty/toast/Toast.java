@@ -52,12 +52,14 @@ import com.wrapper.spotify.model_objects.specification.ArtistSimplified;
  * LAYAOUT:
  * 
  * +----------------+-----------------------------------+
- * |				|	ARTIST							|
- * |	COVER		+-----------------------------------+
- * |				|	SONG							|
+ * |                |   ARTIST                          |
+ * |    COVER       +-----------------------------------+
+ * |                |   SONG                            |
  * +----------------+-----------------------------------+
- * |	CONTROLS	|	ALBUM							|
+ * |    CONTROLS    |   ALBUM                           |
  * +----------------+-----------------------------------+
+ * 
+ * @author shamalaya
  */
 @Log4j
 public class Toast extends JDialog {
