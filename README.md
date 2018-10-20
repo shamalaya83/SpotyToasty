@@ -1,6 +1,8 @@
 # SpotyToasty ![alt text](https://github.com/dandag/SpotyToasty/blob/master/src/main/resources/img/spotytoasty.png "SpotyToasty")
 Simple and Customizable Spotify Overlay
 
+![alt text](https://github.com/dandag/SpotyToasty/blob/master/spotytoasty_sample.png "preview")
+
 ### Steps to run SpotyToasty:
 
 #### 0) Install Java JRE 8
