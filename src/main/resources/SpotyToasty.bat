@@ -1,0 +1,1 @@
+start javaw -jar -Xms24m -Xmx32m -jar "SpotyToasty.jar"

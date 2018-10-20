@@ -1,0 +1,69 @@
+{
+	"server": {
+		"server_ip": "127.0.0.1",
+		"server_port": 9999,
+		"server_path": "spotytoast-redirect"
+	},
+	"auth": {
+		"auth_clientId": null,
+		"auth_clientSecret": null,
+		"auth_refreshToken": null
+	},
+	"overlay": {
+		"show": true,
+		"refresh_ms": 1000,
+		"pooling": false,
+		"opacity": 0.8,
+		"coords": "5,5",
+		"max_width": 500,
+		"overlay_background": "#7d1896",
+		"overlay_border": "5,5,5,5",
+		"overlay_cover_background": "#272727",
+		"overlay_cover_border": "5,0,0,0",
+		"overlay_control_background": "#272727",
+		"overlay_control_border":"0,0,0,0",
+		"overlay_info_background": "#404040",
+		"overlay_info_border": "5,10,5,10"
+	},
+	"cover": {
+		"image_width": 70,
+		"image_height": 70
+	},
+	"controls": {
+		"show": true,
+		"icons_px": 16,
+		"show_prev": true,
+		"show_pp": true,
+		"show_next": true,
+		"show_love": true
+	},
+	"artist": {
+		"show": true,
+		"position": "Center",
+		"color": "#d3d3d3",
+		"font": "Verdana",
+		"weight": 1,
+		"size": 16
+	},
+	"song": {
+		"show": true,
+		"position": "North",
+		"color": "#FFFFFF",
+		"font": "Verdana",
+		"weight": 1,
+		"size": 24
+	},
+	"album": {
+		"show": true,
+		"position": "South",
+		"color": "#d6d6d6",
+		"font": "Verdana",
+		"weight": 2,
+		"size": 14
+	},
+	"automute": true,
+	"autohide": {
+		"autohide": false,
+		"hide_after_ms": 8000
+	}
+}
