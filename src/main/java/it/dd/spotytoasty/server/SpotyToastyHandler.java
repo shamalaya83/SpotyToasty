@@ -10,8 +10,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.wrapper.spotify.exceptions.SpotifyWebApiException;
-
 /**
  * Handler for Spotify authorization code
  * 
@@ -45,7 +43,7 @@ public class SpotyToastyHandler extends HttpServlet {
 				// wakeup main thread
 				SpotyWeb.authorized.countDown();
 				
-			} catch (SpotifyWebApiException e) {
+			} catch (Exception e) {
 				response.setContentType("text/html");
 				response.setStatus(HttpServletResponse.SC_OK);
 				response.getWriter().println("<div>Sry shit happens :(</div>");

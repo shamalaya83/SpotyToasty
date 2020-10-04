@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.neovisionaries.i18n.CountryCode;
 import com.wrapper.spotify.SpotifyApi;
 import com.wrapper.spotify.SpotifyHttpManager;
@@ -19,6 +17,7 @@ import com.wrapper.spotify.model_objects.miscellaneous.CurrentlyPlayingContext;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRefreshRequest;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeRequest;
 import com.wrapper.spotify.requests.authorization.authorization_code.AuthorizationCodeUriRequest;
+import com.wrapper.spotify.requests.data.library.CheckUsersSavedTracksRequest;
 import com.wrapper.spotify.requests.data.library.RemoveUsersSavedTracksRequest;
 import com.wrapper.spotify.requests.data.library.SaveTracksForUserRequest;
 import com.wrapper.spotify.requests.data.player.GetInformationAboutUsersCurrentPlaybackRequest;
@@ -71,7 +70,8 @@ public class SpotyWeb {
 	private final static String SCOPES = 	
 		"user-read-currently-playing, " +
 		"user-read-playback-state, " +
-		"user-library-modify";
+		"user-library-modify, " +
+		"user-library-read";
 
 	// INITIALIZE
 	private SpotyWeb(ParseJSONConfig conf) {
@@ -124,7 +124,7 @@ public class SpotyWeb {
 	}
 
 	// AUTHORIZE
-	public void authorizationCode(String code) throws SpotifyWebApiException, IOException {
+	public void authorizationCode(String code) throws Exception {
 
 		final AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(code).build();
 		final AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
@@ -146,7 +146,7 @@ public class SpotyWeb {
 	}
 
 	// REFRESH
-	public void authorizationCodeRefresh() throws JsonGenerationException, JsonMappingException, IOException, SpotifyWebApiException {
+	public void authorizationCodeRefresh() throws Exception {
 
 		// reload refresh token
 		if( spotifyApi.getRefreshToken() == null ) {
@@ -172,7 +172,7 @@ public class SpotyWeb {
 	}
 
 	// CHECK EXPIRED
-	private void checkExpired() throws JsonGenerationException, JsonMappingException, SpotifyWebApiException, IOException {
+	private void checkExpired() throws Exception {
 		if( System.currentTimeMillis() >= expires ) {
 			authorizationCodeRefresh();
 		}
@@ -196,9 +196,10 @@ public class SpotyWeb {
 		GetInformationAboutUsersCurrentPlaybackRequest getInformationAboutUsersCurrentPlaybackRequest =
 				spotifyApi.getInformationAboutUsersCurrentPlayback()
 				.market(CountryCode.IT)
+				.additionalTypes("track,episode")
 				.build();
 		CurrentlyPlayingContext ris = getInformationAboutUsersCurrentPlaybackRequest.execute();
-
+		
 		log.info("getInformationAboutUsersCurrentPlayback(): info retrieved in " + (System.currentTimeMillis()-start) + " ms" );
 		return ris;
 	}
@@ -210,7 +211,7 @@ public class SpotyWeb {
 	 * @throws SpotifyWebApiException
 	 * @throws IOException
 	 */
-	public void saveTracksForUser(String id) throws SpotifyWebApiException, IOException {		  
+	public void saveTracksForUser(String id) throws Exception {		  
 
 		checkExpired();
 
@@ -226,12 +227,30 @@ public class SpotyWeb {
 	 * @throws SpotifyWebApiException
 	 * @throws IOException
 	 */
-	public void removeTracksForUser(String id) throws SpotifyWebApiException, IOException {		  
+	public void removeTracksForUser(String id) throws Exception {		  
 
 		checkExpired();
 
 		RemoveUsersSavedTracksRequest saveTracksForUserRequest = spotifyApi.removeUsersSavedTracks( new String[] { id } ).build();
 		String ris = saveTracksForUserRequest.execute();
 		log.info("removeTracksForUser(): " + ris);
+	}
+	
+	/**
+	 * Check if track is saved in user's music
+	 * 
+	 * @param id
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean checkTracksForUser(String id) throws Exception {		  
+
+		checkExpired();
+
+		CheckUsersSavedTracksRequest checkTracksForUserRequest = spotifyApi.checkUsersSavedTracks( new String[] { id } ).build();
+		Boolean[] ris = checkTracksForUserRequest.execute();
+		log.info("checkTracksForUser(): " + ris[0]);
+		
+		return ris[0];
 	}
 }

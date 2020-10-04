@@ -43,8 +43,13 @@ import javax.swing.SwingWorker;
 import javax.swing.Timer;
 import javax.swing.border.Border;
 
+import com.wrapper.spotify.enums.CurrentlyPlayingType;
+import com.wrapper.spotify.enums.ModelObjectType;
 import com.wrapper.spotify.model_objects.miscellaneous.CurrentlyPlayingContext;
 import com.wrapper.spotify.model_objects.specification.ArtistSimplified;
+import com.wrapper.spotify.model_objects.specification.Episode;
+import com.wrapper.spotify.model_objects.specification.ShowSimplified;
+import com.wrapper.spotify.model_objects.specification.Track;
 
 /**
  * Spotify Overlay Class
@@ -149,6 +154,8 @@ public class Toast extends JDialog {
 		setUndecorated(true);			
 		setAlwaysOnTop(true);		
 		setAutoRequestFocus(false);
+		setFocusable(false);
+		setFocusableWindowState(false);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);	
 
 		// set opacity
@@ -321,16 +328,18 @@ public class Toast extends JDialog {
 	/**
 	 * Update current song info
 	 * 
-	 * @param track
-	 * @throws IOException
+	 * @param spotifyObj
+	 * @throws Exception 
 	 */
-	public void setCurrentSongInfo( CurrentlyPlayingContext track ) throws IOException {
-
+	public void setCurrentSongInfo( CurrentlyPlayingContext spotifyObj ) throws Exception {
+		
+		String id = getModelTypeID(spotifyObj);
+			
 		// check if the current song is already displayed
-		if( track.getItem().getId().equals(lastTrackID) )
+		if( id.equals(lastTrackID) )
 			return;
 		else
-			lastTrackID = track.getItem().getId();
+			lastTrackID = id;
 		
 		long start = System.currentTimeMillis();
 
@@ -338,9 +347,9 @@ public class Toast extends JDialog {
 		unmute();
 
 		// set icon
-		icon.setImage( parseImage( track ) );
+		icon.setImage( parseImage( spotifyObj ) );
 
-		// set love control
+		// set controls
 		if( conf.getControls().isShow() ) {					
 
 			if( conf.getControls().isShow_prev() ) {		
@@ -363,31 +372,46 @@ public class Toast extends JDialog {
 			}
 
 			if( conf.getControls().isShow_love() ) {
-
-				// reset icon
-				love.setIcon( button_love );
-
-				// set new track
-				((BookmarkActionListner)love.getActionListeners()[0]).setTrack(track);
-
-				if( !love.isEnabled() )
+				
+				// check if is an episode
+				if( spotifyObj.getCurrentlyPlayingType() == CurrentlyPlayingType.TRACK ) {
+					
+					if( !love.isVisible() )
+						love.setVisible(true);
+					
+					// set new track
+					((BookmarkActionListner)love.getActionListeners()[0]).setTrack(spotifyObj);
+					
+					// check if track is already saved
+					boolean flag_loved = spotyWeb.checkTracksForUser(id);
+					
+					if( !flag_loved ) {
+						love.setIcon( button_love );
+					} else {
+						love.setIcon( button_dislike );
+					}
+					
 					love.setEnabled(true);
+					
+				} else {
+					love.setVisible(false);
+				}
 			}
 		}
 
 		// set artist
 		if( conf.getArtist().isShow() ) {
-			artist.setText( concatArtists( track ) );					
+			artist.setText( concatArtists( spotifyObj ) );					
 		}
 
 		// set song
 		if( conf.getSong().isShow() ) {
-			song.setText( parseSong( track ) );
+			song.setText( parseSong( spotifyObj ) );
 		}
 
 		// set album
 		if( conf.getAlbum().isShow() ) {
-			album.setText( parseAlbum( track ) );
+			album.setText( parseAlbum( spotifyObj ) );
 		}								
 
 		// set visible
@@ -411,13 +435,13 @@ public class Toast extends JDialog {
 
 	public void mute() {
 		if( conf.isAutomute() ) {
-			spotyVolume.setSpotifyMute(true);			
+			spotyVolume.muteTargetApplication(true);			
 		}
 	}
 
 	public void unmute() {
 		if( conf.isAutomute() ) {
-			spotyVolume.setSpotifyMute(false);				
+			spotyVolume.muteTargetApplication(false);				
 		}
 	}
 
@@ -478,7 +502,7 @@ public class Toast extends JDialog {
 							if( !conf.getOverlay().isPooling() && track.getProgress_ms() != null ) {
 								
 								// calculate wait time
-								wait = track.getItem().getDurationMs() - track.getProgress_ms();
+								wait = getModelTypeDuration( track ) - track.getProgress_ms();
 								
 								//check wait
 								if( wait < 0) 
@@ -544,10 +568,10 @@ public class Toast extends JDialog {
 			try {
 				String desc = ((ImageIcon) love.getIcon()).getDescription();
 				if( "love".equals(desc) ) {
-					spotyWeb.saveTracksForUser(track.getItem().getId());
+					spotyWeb.saveTracksForUser( getModelTypeID( track ) );
 					love.setIcon( button_dislike );
 				} else if( "dislike".equals(desc) ) {
-					spotyWeb.removeTracksForUser(track.getItem().getId());
+					spotyWeb.removeTracksForUser( getModelTypeID( track ) );
 					love.setIcon( button_love );
 				}
 
@@ -762,48 +786,21 @@ public class Toast extends JDialog {
 		}
 	}
 
-	private static String concatArtists(CurrentlyPlayingContext track) {	
-		String ris = "";
-		try {
-			ArtistSimplified[] artists = track.getItem().getArtists();
-			if( track.getItem().getArtists() != null ) {
-				for(int i=0;i<artists.length;i++) {
-					if(i>0)	ris += ", ";
-					ris += artists[i].getName();
-				}
-			}
-		} catch(Exception e) {
-			ris = "N.A.";
-		}
-
-		return ris;
+	private static String concatArtists(CurrentlyPlayingContext cpc) {	
+		return getModelTypeArtists(cpc);
 	}
 
-	private static String parseSong(CurrentlyPlayingContext track) {	
-		String ris = "";
-		try {
-			return track.getItem().getName();
-		} catch(Exception e) {
-			ris = "N.A.";
-		}
-
-		return ris;
+	private static String parseSong(CurrentlyPlayingContext cpc) {	
+		return getModelTypeName( cpc );
 	}
 
-	private static String parseAlbum(CurrentlyPlayingContext track) {
-		String ris = "";
-		try {
-			return track.getItem().getAlbum().getName();
-		} catch(Exception e) {
-			ris = "N.A.";
-		}
-
-		return ris;
+	private static String parseAlbum(CurrentlyPlayingContext cpc) {
+		return getModelTypeAlbumName(cpc);
 	}
 
-	private Image parseImage( CurrentlyPlayingContext track ) {
+	private Image parseImage( CurrentlyPlayingContext cpc ) {
 		try {
-			final String path = track.getItem().getAlbum().getImages()[0].getUrl();
+			final String path = getModelTypeAlbumCover( cpc );
 			final URL url = new URL(path);	
 			return ImageIO.read(url).getScaledInstance( this.conf.getCover().getImage_width(), this.conf.getCover().getImage_height(), 0 );
 		} catch(Exception e) {
@@ -819,5 +816,121 @@ public class Toast extends JDialog {
 		button.setRolloverEnabled(false);
 		button.setFocusable(false);
 		return button;
+	}
+	
+	/**
+	 * get ID
+	 * @throws IOException 
+	 */
+	private static String getModelTypeID( CurrentlyPlayingContext obj ) throws IOException {
+		if( obj.getItem().getType() == ModelObjectType.TRACK )
+			return ((Track)obj.getItem()).getId();
+		else if( obj.getItem().getType() == ModelObjectType.EPISODE )
+			return ((Episode)obj.getItem()).getId();	
+		else
+			throw new IOException("Unknown spotify modeltype");
+	}
+	
+	/**
+	 * get durationMs
+	 * 
+	 * @param obj
+	 * @return
+	 * @throws IOException
+	 */
+	private static int getModelTypeDuration( CurrentlyPlayingContext obj ) throws IOException {
+		if( obj.getItem().getType() == ModelObjectType.TRACK )
+			return ((Track)obj.getItem()).getDurationMs();
+		else if( obj.getItem().getType() == ModelObjectType.EPISODE )
+			return ((Episode)obj.getItem()).getDurationMs();	
+		else
+			throw new IOException("Unknown spotify modeltype");
+	}
+	
+	/**
+	 * get name
+	 * 
+	 * @param obj
+	 * @return
+	 * @throws IOException
+	 */
+	private static String getModelTypeName( CurrentlyPlayingContext obj ) {
+		try {
+			if( obj.getItem().getType() == ModelObjectType.TRACK )
+				return ((Track)obj.getItem()).getName();
+			else if( obj.getItem().getType() == ModelObjectType.EPISODE )
+				return ((Episode)obj.getItem()).getName();	
+			else
+				return "N.A.";
+		} catch(Exception e) {
+			return "N.A.";
+		}
+	}
+	
+	/**
+	 * get artist/show
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	private static String getModelTypeArtists( CurrentlyPlayingContext obj ) {
+		try {
+			String ris = "N.A.";
+			if( obj.getItem().getType() == ModelObjectType.TRACK ) {
+				ArtistSimplified[] artists = ((Track)obj.getItem()).getArtists();
+				if( artists != null ) {
+					ris = "";
+					for(int i=0;i<artists.length;i++) {
+						if(i>0)	ris += ", ";
+						ris += artists[i].getName();
+					}
+				}
+			}
+			else if( obj.getItem().getType() == ModelObjectType.EPISODE ) {
+				ShowSimplified shows = ((Episode)obj.getItem()).getShow();
+				if( shows != null )
+					ris = shows.getName();
+			}
+
+			return ris;
+			
+		} catch(Exception e) {
+			return "N.A.";
+		}
+	}
+	
+	/**
+	 * get album name
+	 * 
+	 * @param obj
+	 * @return
+	 */
+	private static String getModelTypeAlbumName( CurrentlyPlayingContext obj ) {
+		try {
+			if( obj.getItem().getType() == ModelObjectType.TRACK )
+				return ((Track)obj.getItem()).getAlbum().getName();
+			else if( obj.getItem().getType() == ModelObjectType.EPISODE )
+				return ((Episode)obj.getItem()).getDescription();
+			else
+				return "N.A.";
+		} catch(Exception e) {
+			return "N.A.";
+		}
+	}
+	
+	/**
+	 * get album cover
+	 * 
+	 * @param obj
+	 * @return
+	 * @throws IOException
+	 */
+	private static String getModelTypeAlbumCover( CurrentlyPlayingContext obj ) throws IOException {
+		if( obj.getItem().getType() == ModelObjectType.TRACK )
+			return ((Track)obj.getItem()).getAlbum().getImages()[0].getUrl();
+		else if( obj.getItem().getType() == ModelObjectType.EPISODE )
+			return ((Episode)obj.getItem()).getShow().getImages()[0].getUrl();
+		else
+			throw new IOException("Unknown spotify modeltype");
 	}
 }

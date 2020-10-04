@@ -5,7 +5,6 @@ import it.dd.spotytoasty.configuration.ParseJSONConfig;
 import it.dd.spotytoasty.server.SpotyToastyServer;
 import it.dd.spotytoasty.toast.Toast;
 import it.dd.spotytoasty.utils.Utils;
-import com.wrapper.spotify.exceptions.SpotifyWebApiException;
 
 /**
  * Simple Spotify Toast
@@ -15,7 +14,7 @@ import com.wrapper.spotify.exceptions.SpotifyWebApiException;
  */
 public class SpotyToasty {
 	
-	public static void main(String[] args) throws SpotifyWebApiException, Exception {
+	public static void main(String[] args) throws Exception {
 
 		// parse parameter
 		final String config_file = Utils.parserParameter(args);
